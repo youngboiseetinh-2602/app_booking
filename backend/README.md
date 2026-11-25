@@ -44,6 +44,53 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Authentication and authorization
+
+Authentication uses `@nestjs/authentication`, with `PasswordHasher`,
+`TokenService`, and an application `JwtBearerProvider`, following the
+`nestJs_fundamental` reference. The Nest runtime and testing packages use
+version 12 to satisfy the library's peer dependencies.
+
+Copy `.env.example` to `.env`, configure PostgreSQL, and set `JWT_SECRET` to a
+random value of at least 32 characters. Keep `.env` out of version control.
+You can generate a secret locally with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(64).toString('hex'))"
+```
+
+- `POST /users/register`: public registration; creates an active customer.
+- `POST /auth/login`: public login with `username` and `password`; returns
+  `accessToken`, `tokenType: "Bearer"`, and `expiresIn: 1800` (30 minutes).
+- `GET /auth/me`: requires `Authorization: Bearer <accessToken>`; returns the
+  current user's ID, username, role, and hotel ID, without password data.
+
+Existing controllers are marked `@Public()` to keep business endpoints public
+for now. Use `@Authenticate()` from `@nestjs/authentication` on a method to
+override that controller default and require a token. A new controller without
+`@Public()` is protected by the library's global authentication guard.
+
+`src/auth` contains the login DTO, authenticated user/response interfaces,
+controller, service, module, and the token/JWT providers. Use `@Public()`,
+`@Authenticate()`, and `@CurrentUser()` directly from `@nestjs/authentication`.
+
+Authorization is separate in `src/authorization/authorization.module.ts`,
+using `@nestjs/authorization` with `globalGuard: false`. The `policies` folder
+is reserved for future business rules; none are applied to business endpoints
+yet. When introducing a protected policy-based endpoint, use `@Authenticate()`,
+`@UseGuards(AuthorizationGuard)`, and `@Can(YourPolicy, 'ability')`, and register
+the `@Policy()` class as a provider. Authorization tests use test-only policies.
+
+Registration and login both use `PasswordHasher` from `@nestjs/authentication`.
+
+Protected requests check the current account status and role in PostgreSQL.
+Missing, invalid, or expired tokens return HTTP 401; an authenticated user
+denied by an explicitly applied policy receives HTTP 403.
+
+Run `npm run test:auth` for HTTP integration tests using real JWTs and mocked
+user persistence. These tests do not connect to PostgreSQL. The test-only
+authorization routes are not registered in the production application.
+
 ## Run tests
 
 ```bash
