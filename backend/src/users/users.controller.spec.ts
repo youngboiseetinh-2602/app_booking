@@ -1,12 +1,17 @@
 import { ConflictException, INestApplication } from '@nestjs/common';
 import { jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthorizationGuard } from '@nestjs/authorization';
 import request from 'supertest';
 import type { Server } from 'node:http';
 import type { UsersService } from './users.service';
 
 jest.unstable_mockModule('./entities/user.entity', () => ({
   User: class User {},
+}));
+
+jest.unstable_mockModule('../hotels/entities/hotel.entity', () => ({
+  Hotel: class Hotel {},
 }));
 
 describe('POST /users/register', (): void => {
@@ -25,7 +30,10 @@ describe('POST /users/register', (): void => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: { register } }],
-    }).compile();
+    })
+      .overrideGuard(AuthorizationGuard)
+      .useValue({ canActivate: (): boolean => true })
+      .compile();
     app = module.createNestApplication();
     await app.init();
   });
