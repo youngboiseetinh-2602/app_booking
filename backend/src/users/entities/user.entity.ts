@@ -16,7 +16,7 @@ import { Review } from '../../reviews/entities/review.entity';
 @Entity('users')
 @Check(
   'CHK_users_role_hotel_id',
-  `("role" = '${Role.STAFF}' AND "hotelId" IS NOT NULL) OR ("role" IN ('${Role.CUSTOMER}', '${Role.ADMIN}') AND "hotelId" IS NULL)`,
+  `("role" IN ('${Role.STAFF}', '${Role.MANAGER}') AND "hotelId" IS NOT NULL) OR ("role" IN ('${Role.CUSTOMER}', '${Role.ADMIN}') AND "hotelId" IS NULL)`,
 )
 export class User {
   @PrimaryGeneratedColumn('uuid')
